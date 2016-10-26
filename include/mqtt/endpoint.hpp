@@ -1560,6 +1560,7 @@ private:
     >::type
     shutdown(T& socket) {
         boost::system::error_code ec;
+        socket.lowest_layer().cancel(ec);
         socket.shutdown(ec);
         socket.lowest_layer().close();
     }
@@ -1570,7 +1571,9 @@ private:
         std::is_same<T, as::ip::tcp::socket>::value
     >::type
     shutdown(T& socket) {
-        socket.close();
+        boost::system::error_code ec;
+        socket.cancel(ec);
+        socket.close(ec);
     }
 
     template <typename... Args>
