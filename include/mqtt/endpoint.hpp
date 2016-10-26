@@ -708,8 +708,7 @@ public:
      */
     void force_disconnect() {
         if (connected_) {
-            shutdown(*socket_);
-            connected_ = false;
+            shutdown(*socket_, [this] { connected_ = false; });
         }
     }
 
@@ -1478,23 +1477,27 @@ public:
     bool handle_close_or_error(boost::system::error_code const& ec) {
         if (!ec) return false;
         connected_ = false;
-        shutdown(*socket_);
-        if (ec == as::error::eof ||
-            ec == as::error::connection_reset
+        shutdown(
+            *socket_,
+            [ec, this] {
+                if (ec == as::error::eof ||
+                    ec == as::error::connection_reset
 #if !defined(MQTT_NO_TLS)
-            ||
-            ec.value() == ERR_PACK(ERR_LIB_SSL, 0, SSL_R_SHORT_READ)
+                    ||
+                    ec.value() == ERR_PACK(ERR_LIB_SSL, 0, SSL_R_SHORT_READ)
 #endif // defined(MQTT_NO_TLS)
-        ) {
-            handle_close();
-            return true;
-        }
-        if (ec == as::error::eof ||
-            ec == as::error::connection_reset) {
-            handle_close();
-            return true;
-        }
-        handle_error(ec);
+                ) {
+                    handle_close();
+                    return;
+                }
+                if (ec == as::error::eof ||
+                    ec == as::error::connection_reset) {
+                    handle_close();
+                    return;
+                }
+                handle_error(ec);
+            }
+        );
         return true;
     }
 
@@ -1554,23 +1557,36 @@ protected:
 
 private:
 #if !defined(MQTT_NO_TLS)
-    template <typename T>
+    template <typename T, typename Func>
     typename std::enable_if<
         std::is_same<T, as::ssl::stream<as::ip::tcp::socket>>::value
     >::type
-    shutdown(T& socket) {
-        boost::system::error_code ec;
-        socket.shutdown(ec);
-        socket.lowest_layer().close();
+    shutdown(T& socket, Func&& f) {
+        auto self = this->shared_from_this();
+        strand_.post(
+            [&socket, self, f = std::forward<Func>(f)] {
+                boost::system::error_code ec;
+                socket.shutdown(ec);
+                socket.lowest_layer().close(ec);
+                f();
+            }
+        );
     }
 #endif // defined(MQTT_NO_TLS)
 
-    template <typename T>
+    template <typename T, typename Func>
     typename std::enable_if<
         std::is_same<T, as::ip::tcp::socket>::value
     >::type
-    shutdown(T& socket) {
-        socket.close();
+    shutdown(T& socket, Func&& f) {
+        auto self = this->shared_from_this();
+        strand_.post(
+            [&socket, self, f = std::forward<Func>(f)] {
+                boost::system::error_code ec;
+                socket.close(ec);
+                f();
+            }
+        );
     }
 
     template <typename... Args>
@@ -3101,7 +3117,7 @@ private:
     std::unique_ptr<Socket> socket_;
     std::string host_;
     std::string port_;
-    bool connected_;
+    std::atomic<bool> connected_;
     std::string client_id_;
     bool clean_session_;
     boost::optional<will> will_;
