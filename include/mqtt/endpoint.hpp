@@ -708,7 +708,8 @@ public:
      */
     void force_disconnect() {
         if (connected_) {
-            shutdown(*socket_, [this] { connected_ = false; });
+            connected_ = false;
+            shutdown(*socket_, [self = this->shared_from_this()]{});
         }
     }
 
@@ -1478,7 +1479,7 @@ public:
         if (!ec) return false;
         shutdown(
             *socket_,
-            [ec, this] {
+            [ec, this, self = this->shared_from_this()] {
                 if (!connected_) return;
                 connected_ = false;
                 if (ec == as::error::eof ||
