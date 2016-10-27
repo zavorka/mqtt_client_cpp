@@ -708,8 +708,7 @@ public:
      */
     void force_disconnect() {
         if (connected_) {
-            connected_ = false;
-            shutdown(*socket_, [self = this->shared_from_this()]{});
+            shutdown(*socket_, []{});
         }
     }
 
@@ -1479,7 +1478,7 @@ public:
         if (!ec) return false;
         shutdown(
             *socket_,
-            [ec, this, self = this->shared_from_this()] {
+            [ec, this] {
                 if (!connected_) return;
                 connected_ = false;
                 if (ec == as::error::eof ||
@@ -1565,7 +1564,7 @@ private:
     >::type
     shutdown(T& socket, Func&& f) {
         strand_.post(
-            [&socket, f = std::forward<Func>(f)] {
+            [&socket, f = std::forward<Func>(f), self = this->shared_from_this()] {
                 boost::system::error_code ec;
                 socket.shutdown(ec);
                 socket.lowest_layer().close(ec);
@@ -1581,7 +1580,7 @@ private:
     >::type
     shutdown(T& socket, Func&& f) {
         strand_.post(
-            [&socket, f = std::forward<Func>(f)] {
+            [&socket, f = std::forward<Func>(f), self = this->shared_from_this()] {
                 boost::system::error_code ec;
                 socket.close(ec);
                 f();
