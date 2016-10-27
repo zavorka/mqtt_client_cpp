@@ -1476,10 +1476,11 @@ public:
 
     bool handle_close_or_error(boost::system::error_code const& ec) {
         if (!ec) return false;
-        connected_ = false;
         shutdown(
             *socket_,
             [ec, this] {
+                if (!connected_) return;
+                connected_ = false;
                 if (ec == as::error::eof ||
                     ec == as::error::connection_reset
 #if !defined(MQTT_NO_TLS)
@@ -1562,9 +1563,8 @@ private:
         std::is_same<T, as::ssl::stream<as::ip::tcp::socket>>::value
     >::type
     shutdown(T& socket, Func&& f) {
-        auto self = this->shared_from_this();
         strand_.post(
-            [&socket, self, f = std::forward<Func>(f)] {
+            [&socket, f = std::forward<Func>(f)] {
                 boost::system::error_code ec;
                 socket.shutdown(ec);
                 socket.lowest_layer().close(ec);
@@ -1579,9 +1579,8 @@ private:
         std::is_same<T, as::ip::tcp::socket>::value
     >::type
     shutdown(T& socket, Func&& f) {
-        auto self = this->shared_from_this();
         strand_.post(
-            [&socket, self, f = std::forward<Func>(f)] {
+            [&socket, f = std::forward<Func>(f)] {
                 boost::system::error_code ec;
                 socket.close(ec);
                 f();
