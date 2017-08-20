@@ -14,7 +14,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <mqtt/client.hpp>
 
-constexpr char const* broker_url = "test.mosquitto.org";
+constexpr char const* broker_url = "localhost";
 constexpr uint16_t const broker_notls_port = 1883;
 constexpr uint16_t const broker_tls_port = 8883;
 
