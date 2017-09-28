@@ -7,21 +7,21 @@ install:
  - export VALGRIND_URL="http://valgrind.org/downloads/valgrind-3.12.0.tar.bz2"
  - export OPENSSL_URL="https://www.openssl.org/source/openssl-1.0.2k.tar.gz"
  - export BOOST_URL="https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz"
- - export OS=$TRAVIS_OS_NAME
+ - export OS=${TRAVIS_OS_NAME}
  - mkdir ${BASE}/usr
- - [ "$OS" == "linux" ] && wget --no-check-certificate ${CMAKE_URL} -O cmake.sh
- - [ "$OS" == "linux" ] && chmod a+x cmake.sh
- - [ "$OS" == "linux" ] && ./cmake.sh --prefix=${BASE}/usr --skip-license
- - [ "$OS" == "linux" ] && export PATH="${BASE}/usr/bin:$PATH"
- - [ "$OS" == "linux" ] && export LD_LIBRARY_PATH="${BASE}/usr/lib:$LD_LIBRARY_PATH"
- - [ "$CXX" == "g++" ] && export CXX="g++-6" CC="gcc-6"
- - [ "$CXX" == "clang++" ] && [ "$OS" == "linux" ] && export CXX="clang++-3.7" CC="clang-3.7"
- - [ "$OS" == "linux" ] && curl -L $VALGRIND_URL | tar xj && cd valgrind-3.12.0 && ./configure --prefix=${BASE}/usr > /dev/null && make -j3 > /dev/null && make install > /dev/null && cd ..; fi
+ - test "$OS" == "linux" && wget --no-check-certificate ${CMAKE_URL} -O cmake.sh
+ - test "$OS" == "linux" && chmod a+x cmake.sh
+ - test "$OS" == "linux" && ./cmake.sh --prefix=${BASE}/usr --skip-license
+ - test "$OS" == "linux" && export PATH="${BASE}/usr/bin:$PATH"
+ - test "$OS" == "linux" && export LD_LIBRARY_PATH="${BASE}/usr/lib:$LD_LIBRARY_PATH"
+ - test "$CXX" == "g++" && export CXX="g++-6" CC="gcc-6"
+ - test "$CXX" == "clang++" && [ "$OS" == "linux" ] && export CXX="clang++-3.7" CC="clang-3.7"
+ - test "$OS" == "linux" && curl -L $VALGRIND_URL | tar xj && cd valgrind-3.12.0 && ./configure --prefix=${BASE}/usr > /dev/null && make -j3 > /dev/null && make install > /dev/null && cd ..; fi
 # boost
  - curl -L $BOOST_URL | tar xz && cd boost_1_65_1 && ./bootstrap.sh && ./b2 -j`nproc` --prefix=${BASE}/usr --with-timer --with-chrono --with-test address-model=64 install > /dev/null && cd ..
  - curl -L $OPENSSL_URL | tar xz
- - [ "$OS" == "linux" ] && cd openssl-1.0.2k && ./config --prefix=${BASE}/usr && make && make install > /dev/null && cd ..
- - [ "$OS" == "osx" ]   && cd openssl-1.0.2k && ./Configure darwin64-x86_64-cc --prefix=${BASE}/usr && make && make install > /dev/null && cd ..
+ - "$OS" == "linux" && cd openssl-1.0.2k && ./config --prefix=${BASE}/usr && make -j `nproc` && make install > /dev/null && cd ..
+ - "$OS" == "osx"   && cd openssl-1.0.2k && ./Configure darwin64-x86_64-cc --prefix=${BASE}/usr && make -j `nproc` && make install > /dev/null && cd ..
 
 matrix:
   include:
