@@ -7,8 +7,8 @@ install:
  - export BOOST_URL=https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz
  - mkdir ${BASE}/usr
  - if [ "$CXX" == "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi
- - if { "$CXX" == "clang++" ] && if [ "$OS" == "linux" ]; \
-   then export CXX="clang++-3.7" CC="clang-3.7"	; fi
+ - if [ "$CXX" == "clang++" ] && [ "$OS" == "linux" ]; then \
+   export CXX="clang++-3.7" CC="clang-3.7" ; fi
  - if [ "$OS" == "mac"]; then curl -L $BOOST_URL | tar xz \
    && ./Configure darwin64-x86_64-cc --prefix=${BASE}/usr \
    && make -j `nproc` && make install > /dev/null && cd ..; fi
